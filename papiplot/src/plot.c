@@ -59,6 +59,8 @@ void plot(char *path) {
 
 
 /*	plot "profit.dat" u 1:2 w boxes lc rgb"green" notitle,\
-	     "profit.dat" u ($1+d_width):3 w boxes lc rgb"red" notitle*/
+	     "profit.dat" u ($1+d_width):3 w boxes lc rgb"red" notitle
+	     http://gnuplot-surprising.blogspot.com.es/2011/09/plot-histograms-using-boxes.html
+	     */
 	sleep(50000000);
 }
