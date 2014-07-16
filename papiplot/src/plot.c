@@ -1,0 +1,50 @@
+/*
+ * plot.c
+ *
+ *  Created on: Jul 16, 2014
+ *      Author: aarias
+ */
+
+#include "gnuplot_i.h"
+
+/*typedef struct tot_event_per_actor {
+	char *plot_file;
+	char *event_name[];
+} action_s;*/
+
+int main(int argc, char **argv) {
+
+	if (argc == 1){
+		printf("PapiPlot usage:\n"
+				"%s {path}\n"
+				"being {path} the path to your papify-output generated folder\n"
+				"\nIf not installed, you need to install gnuplot. In Ubuntu run:\n"
+				"sudo apt-get install gnuplot\n",
+				argv[0]);
+
+		exit(0);
+	}
+	char* path = malloc(strlen(argv[1]));
+	strcpy(path, argv[1]);
+
+	gnuplot_ctrl * h ;
+	h = gnuplot_init() ;
+
+	gnuplot_cmd(h, "reset");
+
+	gnuplot_cmd(h,"list = ''");
+	gnuplot_cmd(h,"index(w) = words(substr(list, 0, strstrt(list, w)-1))");
+	gnuplot_cmd(h,"add_label(d) = (strstrt(list, d) == 0 ? list=list.' '.d : '')");
+
+	gnuplot_cmd(h, "set datafile separator \";\"");
+	gnuplot_cmd(h, "set xtics rotate");
+	//gnuplot_cmd(h, "set logscale y");
+
+	gnuplot_cmd(h, "plot \"%s\" "
+			"every ::1 using (d='|'.strcol(2).'|', add_label(d),index(d)):3:xtic(2) smooth frequency w boxes title \"PAPI TOT INS\"",
+			path);
+
+	sleep(50000000);
+
+	return 0;
+}

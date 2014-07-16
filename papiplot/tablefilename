@@ -1,0 +1,10 @@
+
+# Curve 0 of 1, 5 points
+# Curve title: ""/home/aarias/Desktop/HSI_SYSTEM/compiled/build/papi-output/papi_output_VCA.csv" every ::1 using (d='|'.strcol(2).'|', add_label(d),index(d)):3:xtic(2)"
+# x y xlow xhigh type
+ 0  5.73226e+06  0  0  i
+ 1  68562  1  1  i
+ 2  6.92567e+07  2  2  i
+ 3  3876  3  3  i
+ 0  580  0  0  u
+
