@@ -64,6 +64,7 @@ void plot(char *path, char* actor_name) {
 	gnuplot_cmd(h, "set boxwidth total_box_width_relative/n relative");
 	gnuplot_cmd(h, "set style fill transparent solid 0.5 noborder");
 
+
 	gnuplot_cmd(h, "set xrange [-1:%d]", number_of_actions);
 	gnuplot_cmd(h, "set title \"Events in %s per action\"", actor_name);
 	gnuplot_cmd(h, "set xtics out");
@@ -122,6 +123,14 @@ void plot(char *path, char* actor_name) {
 
 //	gnuplot_close(h);
 //	sleep(100);
+
+
+/*	plot "profit.dat" u 1:2 w boxes lc rgb"green" notitle,\
+	     "profit.dat" u ($1+d_width):3 w boxes lc rgb"red" notitle
+	     http://gnuplot-surprising.blogspot.com.es/2011/09/plot-histograms-using-boxes.html
+	     http://gnuplot-surprising.blogspot.com.es/2011/10/add-value-labels-to-top-of-bars-in-bar.html
+	     */
+	sleep(50000000);
 }
 
 int get_events_nb(char *path) {
