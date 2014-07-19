@@ -183,8 +183,8 @@ void search_and_plot(char *path) {
 	FILE* datafile = fopen(path_to_totals,"w");
 	fclose(datafile);
 
-	int actors_nb = get_nb_of_actors_in_dir(path);
-	event_acum_for_actor* data[actors_nb];
+	//int actors_nb = get_nb_of_actors_in_dir(path);
+	event_acum_for_actor* data;
 
     struct dirent *pDirent;
     DIR *pDir;
@@ -205,8 +205,10 @@ void search_and_plot(char *path) {
     		strcat(path_to_csv,"/");
     		strcat(path_to_csv,pDirent->d_name);
         	//printf("plot of %s\n", pDirent->d_name);
+        	data = process_data(path, path_to_csv, pDirent->d_name, path_to_totals);
         	//plot(path_to_csv, pDirent->d_name);
-        	data[i] = process_data(path, path_to_csv, pDirent->d_name, path_to_totals);
+        	//remove temp files
+        	//free
         	//struct_test(data[i++]);
         }
     }
@@ -316,12 +318,13 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 
 	fclose(ofile);
 
+	struct_test(actor);
 
 	//writing events per action
 	FILE* datafile = fopen(path_todatafile,"w");
 	fprintf(datafile,"Action;");
 	for(i=0;i< events_nb;i++)
-		fprintf(datafile,"%s;",actor->actions[0]->acumulator[0]->event_name);
+		fprintf(datafile,"%s;",actor->actions[0]->acumulator[i]->event_name);
 	fprintf(datafile,"\n");
 
 	for(i = 0; i< actions_nb;i++){
@@ -332,8 +335,8 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 		fprintf(datafile,"\n");
 	}
 	fclose(datafile);
-	//adding to totals per actor
 
+	//adding to totals per actor
 	int label_set = 0;
 	datafile = fopen(path_to_totals,"r");
 	fgets(buf,1500,datafile);
@@ -345,7 +348,7 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	if(label_set == 0){
 		fprintf(datafile,"Actor;");
 		for(i=0;i< events_nb;i++)
-			fprintf(datafile,"%s;",actor->actions[0]->acumulator[0]->event_name);
+			fprintf(datafile,"%s;",actor->actions[0]->acumulator[i]->event_name);
 		fprintf(datafile,"\n");
 	}
 
