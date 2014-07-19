@@ -26,6 +26,7 @@ typedef struct event_acum_for_actor {
 } event_acum_for_actor;
 
 event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* filename, char* path_to_totals);
+int get_nb_of_actors_in_dir(char* path);
 int get_number(char *line);
 void search_and_plot(char *path);
 void struct_test(struct event_acum_for_actor *data);
@@ -52,27 +53,24 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void plot(char *path, char* actor_name, int number_of_actions, int number_of_events) {
-	int i;
-	gnuplot_ctrl * h ;
-	h = gnuplot_init() ;
+void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_elements){
+
 
 	gnuplot_cmd(h,"list = ''");
 	gnuplot_cmd(h,"index(w) = words(substr(list, 0, strstrt(list, w)-1))");
 	gnuplot_cmd(h,"add_label(d) = (strstrt(list, d) == 0 ? list=list.' '.d : '')");
 
 	gnuplot_cmd(h, "set datafile separator \";\"");
-	//gnuplot_cmd(h, "set xtics rotate by -35");
+	gnuplot_cmd(h, "set xtics rotate by -25");
 	gnuplot_cmd(h, "set logscale y");
 
 	gnuplot_cmd(h, "set term png size 1680,1050");
 
-	gnuplot_cmd(h, "set output \"papiplot_%s.png\"",actor_name);
-	gnuplot_cmd(h, "set xlabel \"Actions\"");
 	gnuplot_cmd(h, "set ylabel \"Number of occurrences\"");
 
 
 	gnuplot_cmd(h, "dx=0.7");
+
 	gnuplot_cmd(h, "n=%d",number_of_events);
 	gnuplot_cmd(h, "total_box_width_relative=0.3");
 	gnuplot_cmd(h, "gap_width_relative=0.1");
@@ -80,21 +78,34 @@ void plot(char *path, char* actor_name, int number_of_actions, int number_of_eve
 	gnuplot_cmd(h, "set boxwidth total_box_width_relative/n relative");
 	gnuplot_cmd(h, "set style fill transparent solid 0.5 noborder");
 
+	gnuplot_cmd(h, "set xrange [-1:%d]", number_of_elements);
 
-	gnuplot_cmd(h, "set xrange [-1:%d]", number_of_actions);
-	gnuplot_cmd(h, "set title \"Events in %s per action\"", actor_name);
 	gnuplot_cmd(h, "set xtics out");
 	gnuplot_cmd(h, "set xtics nomirror");
 	gnuplot_cmd(h, "set xtics autofreq");
 	gnuplot_cmd(h, "set xtics font \"Verdana,8\"");
+	gnuplot_cmd(h, "set tic scale 0");
 	gnuplot_cmd(h, "set grid");
+	gnuplot_cmd(h, "set label at character 1,1 \"Generated with Papify\"");
 
+}
+
+void plot_overall(char* output_path, char *path, int number_of_actors, int number_of_events) {
+	int i;
+	gnuplot_ctrl * h ;
+	h = gnuplot_init() ;
+
+	int label_rot = 20;
+	configure_handle(h, number_of_events, number_of_actors);
+	gnuplot_cmd(h, "set output \"%s/papiplot_overall_.png\"", output_path);
+	gnuplot_cmd(h, "set title \"Events per actor\"");
+	gnuplot_cmd(h, "set xlabel \"Actors\"");
 
 	gnuplot_cmd(h, "plot \\");
 	if(number_of_events==1){
 		i = 0;
 		gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:xtic(1) w boxes title columnhead,\\", path, i, i+2);
-		gnuplot_cmd(h, "\"%s\" using (d='|'.strcol(1).'|', add_label(d),index(d)):2:2 w labels rotate by 90 font \",5\" notitle", path);
+		gnuplot_cmd(h, "\"%s\" using (d='|'.strcol(1).'|', add_label(d),index(d)):2:2 w labels rotate by %d font \",5\" notitle", path, label_rot);
 	}
 	else if (number_of_events==0){
 		printf("nothing to plot\n");
@@ -104,19 +115,62 @@ void plot(char *path, char* actor_name, int number_of_actions, int number_of_eve
 		for(i=0;i<number_of_events;i++){
 			if(i == 0){//first
 				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:xtic(1) w boxes title columnhead,\\", path, i, i+2);
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by 90 font \",5\" notitle,\\", path, i, i+2, i+2);
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle,\\", path, i, i+2, i+2, label_rot);
 				}
 			else if (i==(number_of_events-1)){//last
 				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d w boxes title columnhead,\\", path, i, i+2);
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by 90 font \",5\" notitle", path, i, i+2, i+2);
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle", path, i, i+2, i+2, label_rot);
 			}
 			else{
 				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d w boxes title columnhead,\\", path, i, i+2);
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by 90 font \",5\" notitle,\\", path, i, i+2, i+2);
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle,\\", path, i, i+2, i+2, label_rot);
 			}
 		}
 	}
 	//sleep(6);
+	gnuplot_close(h);
+}
+
+void plot(char* output_path, char *path, char* actor_name, int number_of_actions, int number_of_events) {
+	int i;
+	gnuplot_ctrl * h ;
+	h = gnuplot_init() ;
+
+	int label_rot = 20;
+	configure_handle(h, number_of_events, number_of_actions);
+	gnuplot_cmd(h, "set output \"%s/papiplot_%s.png\"", output_path, actor_name);
+	gnuplot_cmd(h, "set title \"Events in actor \\\"%s\\\" per action\"", actor_name);
+	gnuplot_cmd(h, "set xlabel \"Actions\"");
+
+
+
+	gnuplot_cmd(h, "plot \\");
+	if(number_of_events==1){
+		i = 0;
+		gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:xtic(1) w boxes title columnhead,\\", path, i, i+2);
+		gnuplot_cmd(h, "\"%s\" using (d='|'.strcol(1).'|', add_label(d),index(d)):2:2 w labels rotate by %d font \",5\" notitle", path, label_rot);
+	}
+	else if (number_of_events==0){
+		printf("nothing to plot\n");
+		exit(0);
+	}
+	else{
+		for(i=0;i<number_of_events;i++){
+			if(i == 0){//first
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:xtic(1) w boxes title columnhead,\\", path, i, i+2);
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle,\\", path, i, i+2, i+2, label_rot);
+				}
+			else if (i==(number_of_events-1)){//last
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d w boxes title columnhead,\\", path, i, i+2);
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle", path, i, i+2, i+2, label_rot);
+			}
+			else{
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d w boxes title columnhead,\\", path, i, i+2);
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle,\\", path, i, i+2, i+2, label_rot);
+			}
+		}
+	}
+
 	gnuplot_close(h);
 }
 
@@ -149,10 +203,10 @@ void search_and_plot(char *path) {
 	char * path_to_totals = malloc(strlen(path)+strlen("/plotdata_papi_totals.csv")+2);
 	strcpy(path_to_totals, path);
 	strcat(path_to_totals,"/plotdata_papi_totals.csv");
-	FILE* datafile = fopen(path_to_totals,"w");
+	FILE* datafile = fopen(path_to_totals,"w");//reset
 	fclose(datafile);
 
-	//int actors_nb = get_nb_of_actors_in_dir(path);
+	int actors_nb = get_nb_of_actors_in_dir(path);
 	event_acum_for_actor* data;
 
     struct dirent *pDirent;
@@ -171,14 +225,15 @@ void search_and_plot(char *path) {
     		strcpy(path_to_csv, path);
     		strcat(path_to_csv,"/");
     		strcat(path_to_csv,pDirent->d_name);
-        	//printf("plot of %s\n", pDirent->d_name);
         	data = process_data(path, path_to_csv, pDirent->d_name, path_to_totals);
-        	plot(data->proc_file_path, data->actor_name, data->actions_nb, data->actions[0]->events_nb);
+        	plot(path, data->proc_file_path, data->actor_name, data->actions_nb, data->actions[0]->events_nb);
         	//todo generate html file with data
-        	//remove temp files
+        	remove(data->proc_file_path);
         	free(data);
         }
     }
+    plot_overall(path, path_to_totals, actors_nb, get_events_nb(path_to_totals)+1);
+    remove(path_to_totals);
 
     closedir (pDir);
     return;
