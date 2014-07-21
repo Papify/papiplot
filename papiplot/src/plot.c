@@ -318,7 +318,7 @@ void search_and_plot(char *path) {
 
     while ((pDirent = readdir(pDir)) != NULL) {
     	if(is_papioutput(pDirent->d_name)) {
-    		printf("going for %s\n", pDirent->d_name);
+    		//printf("going for %s\n", pDirent->d_name);
     		path_to_csv = malloc(strlen(path)+strlen(pDirent->d_name)+2);
     		strcpy(path_to_csv, path);
     		strcat(path_to_csv,"/");
@@ -326,14 +326,14 @@ void search_and_plot(char *path) {
         	data = process_data(path, path_to_csv, pDirent->d_name, path_to_totals);
         	plot(path, data->proc_file_path, data->actor_name, data->actions_nb, data->actions[0]->events_nb);
         	html_actor(htmlfile, data);
-        	//remove(data->proc_file_path);
+        	remove(data->proc_file_path);
         	free(data);
         }
     }
     plot_overall(path, path_to_totals, actors_nb, get_events_nb(path_to_totals)+1);
 
     html_close(htmlfile);
-    //remove(path_to_totals);
+    remove(path_to_totals);
 
     fclose(htmlfile);
     closedir (pDir);
@@ -366,9 +366,8 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	actor->actions_nb = actions_nb;
 	int i, j;
 
-	printf("has %d actions\n", actions_nb);
 	for(i=0;i<actions_nb*3;i++){
-		actor->actions[i] = malloc(sizeof(event_acum_for_action)*2+sizeof(event_acumulator)*events_nb*3);
+		actor->actions[i] = malloc(sizeof(event_acum_for_action)*2+sizeof(event_acumulator)*events_nb*3);//weird memory is weird..
 		actor->actions[i]->events_nb = events_nb;
 		//actor->actions[i]->action_name
 		for(j=0;j<events_nb;j++){
@@ -412,38 +411,27 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 
 	//acumuating structures
 	int result; //borrar
-	int temp = 0; //borrar
 	while(fgets(buf,1500,ofile)!=NULL){
 		token = strtok(buf,";");
 		token = strtok(NULL,";");//read action name
-		printf("%d\n", ++temp);
 
 		for(i=0; i<actor->actions_nb; i++){
-			printf("continuing with %s (action %d)\n", actor->actions[i]->action_name, i);
-			printf(" beg cos found = %d, i = %d, actions_nb = %d\n", found, i, actions_nb);
 			if(actor->actions[i]->action_name==NULL)
 				break;
 			else {
-				printf("comparing %s with %s\n", actor->actions[i]->action_name, token);
-				printf("result = %d\n",strcmp(actor->actions[i]->action_name,token));
 				result = strcmp(actor->actions[i]->action_name,token);
-				printf("ea, result was %d\n", result);
 				if(result==0){
-					printf("action %s already exists\n", actor->actions[i]->action_name);
 					found = i;
 					break;
 				}
 				else {
-					printf("eaea\n");
-					printf("end? cos found = %d, i = %d, actions_nb = %d\n", found, i, actions_nb);
 				}
 			}
 		}
 		if (found == -1){
-			printf("not found, adding action %s\n", token);
+			//printf("not found, adding action %s\n", token);
 			actor->actions[found_actions]->action_name = malloc(strlen(token)+1);
 			strcpy(actor->actions[found_actions]->action_name,token);
-			printf("%s added!\n", actor->actions[i]->action_name);
 		}
 
 		current = (found == -1)? found_actions++ : found;
