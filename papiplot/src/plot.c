@@ -9,7 +9,7 @@
 #include <dirent.h>
 typedef struct event_acumulator {
 	char* event_name;
-	unsigned long int count;
+	unsigned long long count;
 }event_acumulator;
 
 typedef struct event_acum_for_action {
@@ -44,11 +44,15 @@ int main(int argc, char **argv) {
 				argv[0]);
 		exit(0);
 	}
-	char* path = malloc(strlen(argv[1]));
+	int len = strlen(argv[1])+2;
+	char* path = malloc(len);
 	strcpy(path, argv[1]);
+	path[len-2]='/';
+	path[len-1]='\0';
 
 	search_and_plot(path);
-	//plot(path);
+
+	free(path);
 
 	return 0;
 }
@@ -87,6 +91,7 @@ void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_ele
 	gnuplot_cmd(h, "set tic scale 0");
 	gnuplot_cmd(h, "set grid");
 	gnuplot_cmd(h, "set label at character 1,1 \"Generated with Papify\"");
+	gnuplot_cmd(h, "set format y \"%%.0se%%S\"");
 
 }
 
@@ -97,15 +102,16 @@ void plot_overall(char* output_path, char *path, int number_of_actors, int numbe
 
 	int label_rot = 20;
 	configure_handle(h, number_of_events, number_of_actors);
-	gnuplot_cmd(h, "set output \"%s/papiplot_overall_.png\"", output_path);
+	gnuplot_cmd(h, "set output \"/%s/papiplot_overall_.png\"", output_path);
 	gnuplot_cmd(h, "set title \"Events per actor\"");
 	gnuplot_cmd(h, "set xlabel \"Actors\"");
 
+
+	//draw lines:
 	gnuplot_cmd(h, "plot \\");
 	if(number_of_events==1){
 		i = 0;
 		gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:xtic(1) w boxes title columnhead,\\", path, i, i+2);
-		gnuplot_cmd(h, "\"%s\" using (d='|'.strcol(1).'|', add_label(d),index(d)):2:2 w labels rotate by %d font \",5\" notitle", path, label_rot);
 	}
 	else if (number_of_events==0){
 		printf("nothing to plot\n");
@@ -115,19 +121,38 @@ void plot_overall(char* output_path, char *path, int number_of_actors, int numbe
 		for(i=0;i<number_of_events;i++){
 			if(i == 0){//first
 				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:xtic(1) w boxes title columnhead,\\", path, i, i+2);
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle,\\", path, i, i+2, i+2, label_rot);
 				}
 			else if (i==(number_of_events-1)){//last
 				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d w boxes title columnhead,\\", path, i, i+2);
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle", path, i, i+2, i+2, label_rot);
 			}
 			else{
 				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d w boxes title columnhead,\\", path, i, i+2);
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle,\\", path, i, i+2, i+2, label_rot);
 			}
 		}
 	}
-	//sleep(6);
+	//draw numbers:
+	//gnuplot_cmd(h, "plot \\");
+	if(number_of_events==1){
+		i = 0;
+		gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle", path, i, i+2, i+2);
+	}
+	else if (number_of_events==0){
+		printf("nothing to plot\n");
+		exit(0);
+	}
+	else{
+		for(i=0;i<number_of_events;i++){
+			if(i == 0){//first
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle,\\", path, i, i+2, i+2);
+				}
+			else if (i==(number_of_events-1)){//last
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle", path, i, i+2, i+2);
+			}
+			else{
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle,\\", path, i, i+2, i+2);
+			}
+		}
+	}
 	gnuplot_close(h);
 }
 
@@ -138,17 +163,17 @@ void plot(char* output_path, char *path, char* actor_name, int number_of_actions
 
 	int label_rot = 20;
 	configure_handle(h, number_of_events, number_of_actions);
-	gnuplot_cmd(h, "set output \"%s/papiplot_%s.png\"", output_path, actor_name);
+	gnuplot_cmd(h, "set output \"/%s/papiplot_%s.png\"", output_path, actor_name);
 	gnuplot_cmd(h, "set title \"Events in actor \\\"%s\\\" per action\"", actor_name);
 	gnuplot_cmd(h, "set xlabel \"Actions\"");
 
 
 
+	//draw lines:
 	gnuplot_cmd(h, "plot \\");
 	if(number_of_events==1){
 		i = 0;
 		gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:xtic(1) w boxes title columnhead,\\", path, i, i+2);
-		gnuplot_cmd(h, "\"%s\" using (d='|'.strcol(1).'|', add_label(d),index(d)):2:2 w labels rotate by %d font \",5\" notitle", path, label_rot);
 	}
 	else if (number_of_events==0){
 		printf("nothing to plot\n");
@@ -158,15 +183,36 @@ void plot(char* output_path, char *path, char* actor_name, int number_of_actions
 		for(i=0;i<number_of_events;i++){
 			if(i == 0){//first
 				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:xtic(1) w boxes title columnhead,\\", path, i, i+2);
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle,\\", path, i, i+2, i+2, label_rot);
 				}
 			else if (i==(number_of_events-1)){//last
 				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d w boxes title columnhead,\\", path, i, i+2);
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle", path, i, i+2, i+2, label_rot);
+				//gnuplot_cmd(h, "0 notitle"); //end plot here
 			}
 			else{
 				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d w boxes title columnhead,\\", path, i, i+2);
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:%d w labels rotate by %d font \",5\" notitle,\\", path, i, i+2, i+2, label_rot);
+			}
+		}
+	}
+	//draw numbers:
+	//gnuplot_cmd(h, "plot \\");
+	if(number_of_events==1){
+		i = 0;
+		gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle", path, i, i+2, i+2);
+	}
+	else if (number_of_events==0){
+		printf("nothing to plot\n");
+		exit(0);
+	}
+	else{
+		for(i=0;i<number_of_events;i++){
+			if(i == 0){//first
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle,\\", path, i, i+2, i+2);
+				}
+			else if (i==(number_of_events-1)){//last
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle", path, i, i+2, i+2);
+			}
+			else{
+				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle,\\", path, i, i+2, i+2);
 			}
 		}
 	}
@@ -190,12 +236,56 @@ int get_events_nb(char *path) {
 	}
 
 	fclose(file);
-	return nb-3;//-3 because of first two columns (not events) and bc line ends with ';'
+	return nb-3;//-3 because of the first two columns (not events) and bc line ends with ';'
 }
 
 const int is_papioutput(const char *filename) {
 	if (strstr(filename,"papi_output") != NULL) return 1; //si el fichero no tiene extensión..
     else return 0;
+}
+
+void html_init(FILE* htmlfile){
+	fprintf(htmlfile, "<html><head><meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\"><title></title></head>"
+			"<body><h1>Papify stats processed with PapiPlot</h1><hr style=\"width: 100%; height: 2px;\">");
+}
+void html_close(FILE* htmlfile){
+    fprintf(htmlfile, "<h2>Overall: Events per actor</h2><img alt=\"\""
+    		"src=\"papiplot_overall_.png\">"
+    		"</body></html>");
+}
+
+void html_actor(FILE* htmlfile, event_acum_for_actor* data){
+	fprintf(htmlfile,"<table style=\"text-align: left; width: 100%;\" border=\"1\" cellpadding=\"2\""
+			"cellspacing=\"2\">\n");
+
+	fprintf(htmlfile,"<table border=\"1\">"
+			"<td>Action<br></td>");
+
+
+	int i, j;
+	fprintf(htmlfile, "<h2>Stats for actor \"%s\"</h2>\n",data->actor_name);
+
+	fprintf(htmlfile, "<img alt=\"\""
+		    		"src=\"papiplot_%s.png\">\n",data->actor_name);
+
+
+	for(i=0; i<data->actions[0]->events_nb;i++){
+		fprintf(htmlfile,"<td>%s<br></td>\n", data->actions[0]->acumulator[i]->event_name);
+	}
+	fprintf(htmlfile,"</tr>\n");
+
+
+	for(i=0; i<data->actions_nb;i++){
+		fprintf(htmlfile,"<tr>\n");
+		fprintf(htmlfile,"<td>%s<br></td>\n", data->actions[i]->action_name);
+		for(j=0; j<data->actions[i]->events_nb;j++){
+			fprintf(htmlfile,"<td>%llu<br></td>\n", data->actions[i]->acumulator[j]->count);
+		}
+		fprintf(htmlfile,"</tr>\n");
+	}
+	fprintf(htmlfile,"</table>\n");
+	fprintf(htmlfile,"<hr style=\"width: 100%; height: 2px;\">\n");
+	fprintf(htmlfile,"<br>\n");
 }
 
 void search_and_plot(char *path) {
@@ -205,6 +295,13 @@ void search_and_plot(char *path) {
 	strcat(path_to_totals,"/plotdata_papi_totals.csv");
 	FILE* datafile = fopen(path_to_totals,"w");//reset
 	fclose(datafile);
+
+	char * html = malloc(strlen(path)+strlen("/papiplot.html")+2);
+	strcpy(html, path);
+	strcat(html,"/papiplot.html");
+	FILE* htmlfile = fopen(html,"w");
+	html_init(htmlfile);
+
 
 	int actors_nb = get_nb_of_actors_in_dir(path);
 	event_acum_for_actor* data;
@@ -221,20 +318,24 @@ void search_and_plot(char *path) {
 
     while ((pDirent = readdir(pDir)) != NULL) {
     	if(is_papioutput(pDirent->d_name)) {
+    		printf("going for %s\n", pDirent->d_name);
     		path_to_csv = malloc(strlen(path)+strlen(pDirent->d_name)+2);
     		strcpy(path_to_csv, path);
     		strcat(path_to_csv,"/");
     		strcat(path_to_csv,pDirent->d_name);
         	data = process_data(path, path_to_csv, pDirent->d_name, path_to_totals);
         	plot(path, data->proc_file_path, data->actor_name, data->actions_nb, data->actions[0]->events_nb);
-        	//todo generate html file with data
-        	remove(data->proc_file_path);
+        	html_actor(htmlfile, data);
+        	//remove(data->proc_file_path);
         	free(data);
         }
     }
     plot_overall(path, path_to_totals, actors_nb, get_events_nb(path_to_totals)+1);
-    remove(path_to_totals);
 
+    html_close(htmlfile);
+    //remove(path_to_totals);
+
+    fclose(htmlfile);
     closedir (pDir);
     return;
 }
@@ -258,15 +359,16 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	//get_actions_nb_in_file(path_tofile);
 	int actions_nb=get_actions_nb_in_file(path_tofile);
 
-	actor = malloc(sizeof(event_acum_for_actor)+sizeof(event_acum_for_action*)*(actions_nb));
+	actor = malloc(sizeof(event_acum_for_actor)+sizeof(event_acum_for_action*)*(actions_nb*3));
 	actor->actor_name = malloc(strlen(actor_name));
 	strcpy(actor->actor_name,actor_name);
 	actor->proc_file_path = path_todatafile;
 	actor->actions_nb = actions_nb;
 	int i, j;
 
-	for(i=0;i<actions_nb;i++){
-		actor->actions[i] = malloc(sizeof(event_acum_for_action)+sizeof(event_acumulator)*events_nb);
+	printf("has %d actions\n", actions_nb);
+	for(i=0;i<actions_nb*3;i++){
+		actor->actions[i] = malloc(sizeof(event_acum_for_action)*2+sizeof(event_acumulator)*events_nb*3);
 		actor->actions[i]->events_nb = events_nb;
 		//actor->actions[i]->action_name
 		for(j=0;j<events_nb;j++){
@@ -275,11 +377,11 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 		}
 	}
 
+
 	for(j = 0; j <actor->actions_nb; j++)
 		for(i = 0; i <actor->actions[j]->events_nb; i++){
 			actor->actions[j]->acumulator[i]->count = 0;
 		}
-
 
 	FILE* ofile = fopen(path_tofile, "r");
 	fgets(buf,1500,ofile);//read first line
@@ -296,6 +398,7 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 		}
 	}
 
+
 	int found = -1;
 	int found_actions = 0;
 	int current;
@@ -306,27 +409,45 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 		totals[i]=0;
 	}
 
+
 	//acumuating structures
+	int result; //borrar
+	int temp = 0; //borrar
 	while(fgets(buf,1500,ofile)!=NULL){
 		token = strtok(buf,";");
 		token = strtok(NULL,";");//read action name
+		printf("%d\n", ++temp);
 
 		for(i=0; i<actor->actions_nb; i++){
-			//printf("comparing %s with %s\n", actor->actions[i]->action_name, token);
-			if(actor->actions[i]->action_name!=NULL && strcmp(actor->actions[i]->action_name,token)==0){
-				//printf("action %s already exist\n", actor->actions[i]->action_name);
-				found = i;
-				//printf("FOUND!\n");
+			printf("continuing with %s (action %d)\n", actor->actions[i]->action_name, i);
+			printf(" beg cos found = %d, i = %d, actions_nb = %d\n", found, i, actions_nb);
+			if(actor->actions[i]->action_name==NULL)
 				break;
+			else {
+				printf("comparing %s with %s\n", actor->actions[i]->action_name, token);
+				printf("result = %d\n",strcmp(actor->actions[i]->action_name,token));
+				result = strcmp(actor->actions[i]->action_name,token);
+				printf("ea, result was %d\n", result);
+				if(result==0){
+					printf("action %s already exists\n", actor->actions[i]->action_name);
+					found = i;
+					break;
+				}
+				else {
+					printf("eaea\n");
+					printf("end? cos found = %d, i = %d, actions_nb = %d\n", found, i, actions_nb);
+				}
 			}
 		}
 		if (found == -1){
-			//printf("not found, adding action %s\n", token);
+			printf("not found, adding action %s\n", token);
 			actor->actions[found_actions]->action_name = malloc(strlen(token)+1);
 			strcpy(actor->actions[found_actions]->action_name,token);
+			printf("%s added!\n", actor->actions[i]->action_name);
 		}
 
 		current = (found == -1)? found_actions++ : found;
+
 
 		for(i = 0; i <actor->actions[current]->events_nb; i++){
 			token = strtok(NULL,";");
@@ -349,7 +470,7 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	for(i = 0; i< actions_nb;i++){
 		fprintf(datafile,"%s;", actor->actions[i]->action_name);
 		for(j=0; j < events_nb; j++){
-			fprintf(datafile,"%lu;", actor->actions[i]->acumulator[j]->count);
+			fprintf(datafile,"%llu;", actor->actions[i]->acumulator[j]->count);
 		}
 		fprintf(datafile,"\n");
 	}
@@ -400,7 +521,8 @@ int get_number(char *line){ //removes quotes from string number
 	}
 	line[j] = '\0';
 
-	return atol(line);
+	//char *tempptr=NULL;
+	return strtoul(line,NULL,10);
 }
 
 //test structure
@@ -416,7 +538,7 @@ void struct_test(struct event_acum_for_actor *data){
 		printf("\tAction name: %s\n", data->actions[i]->action_name);
 		printf("\tNumber of events: %d\n", data->actions[i]->events_nb);
 		for(j=0; j < data->actions[i]->events_nb; j++){
-			printf("\t\tEvent: %s, total: %lu\n", data->actions[i]->acumulator[j]->event_name, data->actions[i]->acumulator[j]->count);
+			printf("\t\tEvent: %s, total: %llu\n", data->actions[i]->acumulator[j]->event_name, data->actions[i]->acumulator[j]->count);
 		}
 
 			//printf("Event: %s, total: %lu\n",data->, data->acumulator->acum[i]);
