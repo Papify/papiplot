@@ -20,6 +20,7 @@ papiplot
 	sudo apt-get install gnuplot
 	
 ========
-Example:\n
+Example:
+
 ./papiplot -n
 ![Alt text](papiplot/readme/papiplot_overall_.png?raw=true "Optional Title")
