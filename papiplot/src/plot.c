@@ -64,6 +64,7 @@ int main(int argc, char **argv) {
 	tics_font_size = 8;
 	labels_font_size = 8;
 	char* path = NULL;
+	char* temp;
 
 	while ((c = getopt (argc, argv, "l:t:nhp:x:y:")) != -1) {
 			switch (c)
@@ -84,7 +85,12 @@ int main(int argc, char **argv) {
 					tics_font_size = atoi(optarg);
 					break;
 				case 'p':
-					path = optarg;
+					temp = optarg;
+					len = strlen(temp)+2;
+					path = malloc(len);
+					strcpy(path, temp);
+					path[len-2]='/';
+					path[len-1]='\0';
 					break;
 				case 'n':
 					NOLABELS = 1;
@@ -120,8 +126,15 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_elements, unsigned int res_x, unsigned int res_y){
+void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_elements){
 
+	gnuplot_cmd(h,"reset");
+
+	gnuplot_cmd(h, "dx=.7");
+	gnuplot_cmd(h, "n=%d", number_of_events);
+	gnuplot_cmd(h, "total_box_width_relative=0.3");
+	gnuplot_cmd(h, "gap_width_relative=0.1");
+	gnuplot_cmd(h, "d_width=(gap_width_relative+total_box_width_relative)*dx/2.");
 
 	gnuplot_cmd(h,"list = ''");
 	gnuplot_cmd(h,"index(w) = words(substr(list, 0, strstrt(list, w)-1))");
@@ -131,28 +144,27 @@ void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_ele
 	gnuplot_cmd(h, "set xtics rotate by -25");
 	gnuplot_cmd(h, "set logscale y");
 
+	gnuplot_cmd(h, "set term png truecolor");
+	gnuplot_cmd(h, "set grid");
+	gnuplot_cmd(h, "set boxwidth total_box_width_relative/n relative");
+	gnuplot_cmd(h, "set style fill transparent solid 0.5 noborder");
+
+
 	gnuplot_cmd(h, "set term png size %d,%d", res_x, res_y);
 
 	gnuplot_cmd(h, "set ylabel \"Number of occurrences\"");
 
 
-	gnuplot_cmd(h, "dx=0.7");
-
-	gnuplot_cmd(h, "n=%d",number_of_events);
-	gnuplot_cmd(h, "total_box_width_relative=0.3");
-	gnuplot_cmd(h, "gap_width_relative=0.1");
-	gnuplot_cmd(h, "d_width=(gap_width_relative+total_box_width_relative)*dx/2.");
-	gnuplot_cmd(h, "set boxwidth total_box_width_relative/n relative");
-	gnuplot_cmd(h, "set style fill transparent solid 0.5 noborder");
-
+	/*
 	gnuplot_cmd(h, "set xrange [-1:%d]", number_of_elements);
-
+*/
 	gnuplot_cmd(h, "set xtics out");
 	gnuplot_cmd(h, "set xtics nomirror");
 	gnuplot_cmd(h, "set xtics autofreq");
 	gnuplot_cmd(h, "set xtics font \"Verdana,%d\"", tics_font_size);
 	gnuplot_cmd(h, "set tic scale 0");
 	gnuplot_cmd(h, "set grid");
+
 	gnuplot_cmd(h, "set label at character 1,1 \"Generated with Papify\"");
 	gnuplot_cmd(h, "set format y \"%%.0se%%S\"");
 
@@ -164,7 +176,7 @@ void plot_overall(char* output_path, char *path, int number_of_actors, int numbe
 	h = gnuplot_init() ;
 
 	//int label_rot = 20;
-	configure_handle(h, number_of_events, number_of_actors, res_x, res_y);
+	configure_handle(h, number_of_events, number_of_actors);
 	gnuplot_cmd(h, "set output \"%s/papiplot_overall_.png\"", output_path);
 	gnuplot_cmd(h, "set title \"Events per actor\"");
 	gnuplot_cmd(h, "set xlabel \"Actors\"");
@@ -230,7 +242,7 @@ void plot(char* output_path, char *path, char* actor_name, int number_of_actions
 	h = gnuplot_init() ;
 
 	//int label_rot = 20;
-	configure_handle(h, number_of_events, number_of_actions, res_x, res_y);
+	configure_handle(h, number_of_events, number_of_actions);
 	gnuplot_cmd(h, "set output \"/%s/papiplot_%s.png\"", output_path, actor_name);
 	gnuplot_cmd(h, "set title \"Events in actor \\\"%s\\\" per action\"", actor_name);
 	gnuplot_cmd(h, "set xlabel \"Actions\"");
@@ -305,11 +317,12 @@ int get_events_nb(char *path) {
 
 	while(token !=NULL){
 		nb++;
+		if(strcmp(token,"\n")==0) nb--;
 		token = strtok(NULL,";");
 	}
 
 	fclose(file);
-	return nb-3;//-3 because of the first two columns (not events) and bc line ends with ';'
+	return nb-2;//-2 because of the first two columns (not events)
 }
 
 const int is_papioutput(const char *filename) {
@@ -321,10 +334,48 @@ void html_init(FILE* htmlfile){
 	fprintf(htmlfile, "<html><head><meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\"><title></title></head>"
 			"<body><h1>Papify stats processed with PapiPlot</h1><hr style=\"width: 100%; height: 2px;\">");
 }
-void html_close(FILE* htmlfile){
+void html_close(FILE* htmlfile, char* path){
     fprintf(htmlfile, "<h2>Overall: Events per actor</h2><img alt=\"\""
-    		"src=\"papiplot_overall_.png\">"
-    		"</body></html>");
+    		"src=\"papiplot_overall_.png\">");
+
+
+
+    int events_nb = get_events_nb(path)+1;
+    int i, j;
+    char* token;
+    char buf[1500];
+
+    FILE* ofile = fopen(path, "r");
+
+	fprintf(htmlfile,"<table border=\"1\">"
+	"<td>Actor<br></td>");
+	fgets(buf, 1500, ofile);
+	token = strtok(buf,";");
+	for(i=0;i<events_nb;i++){
+		token = strtok(NULL,";");
+		fprintf(htmlfile,"<td>%s<br></td>\n", token);
+	}
+	fprintf(htmlfile,"</tr>\n");
+
+	int actors_nb = get_actions_nb_in_file(path);
+	for(i=0;i<actors_nb;i++){
+		fprintf(htmlfile,"<tr>\n");
+		fgets(buf, 1500, ofile);
+		token = strtok(buf,";");
+		for(j=0;j<events_nb+1;j++){
+				fprintf(htmlfile,"<td>%s<br></td>\n", token);
+				token = strtok(NULL,";");
+		}
+		fprintf(htmlfile,"</tr>\n");
+	}
+
+	fprintf(htmlfile,"</table>\n");
+	fprintf(htmlfile,"<hr style=\"width: 100%; height: 2px;\">\n");
+	fprintf(htmlfile,"<br>\n");
+
+
+	fprintf(htmlfile, "</body></html>");
+	fclose(ofile);
 }
 
 void html_actor(FILE* htmlfile, event_acum_for_actor* data){
@@ -402,9 +453,10 @@ void search_and_plot(char *path) {
         	free(data);
         }
     }
+    //printf("going for overalls\n");
     plot_overall(path, path_to_totals, actors_nb, get_events_nb(path_to_totals)+1);
 
-    html_close(htmlfile);
+    html_close(htmlfile, path_to_totals);
     remove(path_to_totals);
 
     fclose(htmlfile);
@@ -431,12 +483,13 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	//get_actions_nb_in_file(path_tofile);
 	int actions_nb=get_actions_nb_in_file(path_tofile);
 
-	actor = malloc(sizeof(event_acum_for_actor)+sizeof(event_acum_for_action*)*(actions_nb*3));
+	actor = malloc(sizeof(event_acum_for_actor)*2+sizeof(event_acum_for_action*)*(actions_nb)*3);//weird memory is weird..
 	actor->actor_name = malloc(strlen(actor_name));
 	strcpy(actor->actor_name,actor_name);
 	actor->proc_file_path = path_todatafile;
 	actor->actions_nb = actions_nb;
 	int i, j;
+
 
 	for(i=0;i<actions_nb*3;i++){
 		actor->actions[i] = malloc(sizeof(event_acum_for_action)*2+sizeof(event_acumulator)*events_nb*3);//weird memory is weird..
@@ -462,6 +515,7 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	for(i=0;i<actor->actions[0]->events_nb;i++){
 		token = strtok(NULL,";");
 		for(j = 0; j <actor->actions_nb; j++){
+			if(token[strlen(token)-1]=='\n') token[strlen(token)-1] = '\0';
 			actor->actions[j]->acumulator[i]->event_name = malloc(strlen(token)+1);
 			strcpy(actor->actions[j]->acumulator[i]->event_name, token);
 			//acum->acumulator->event_name[i] = malloc(strlen(token)+1);
