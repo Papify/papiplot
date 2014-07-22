@@ -32,32 +32,95 @@ void search_and_plot(char *path);
 void struct_test(struct event_acum_for_actor *data);
 int get_events_nb(char *path);
 int get_actions_nb_in_file(char* path_tofile);
+int NOLABELS;
+unsigned int res_x;
+unsigned int res_y;
+int tics_font_size;
+int labels_font_size;
+
+void printhelp(char** argv){
+	printf("\tPapiPlot options:\n"
+			"\t-p [path]"
+			"\t Set path to the papi-output folder generated with Papify. If not specified, current directory will be used.\n\n"
+			"\t-x [res_x]"
+			"\t Change horizontal resolution. If not specified, default is 1680.\n\n"
+			"\t-y [res_y]"
+			"\t Change vertical resolution. If not specified, default is 1050.\n\n"
+			"\t-t [font size]"
+			"\t Change tics font size. If not specified, default is 8.\n\n"
+			"\t-l [font size]"
+			"\t Change labels font size. If not specified, default is 8.\n\n"
+			"\t-n \t \tNo labels will be printed\n\n"
+			"\t-h \t \tPrint help\n\n"
+			"\tPapiPlot requires GNUPLOT. If not installed, assuming you are on Ubuntu, run:\n"
+			"\tsudo apt-get install gnuplot\n\n");
+}
+
 
 int main(int argc, char **argv) {
+	int c, len;
+	res_x = 1680;
+	res_y = 1050;
+	tics_font_size = 8;
+	labels_font_size = 8;
+	char* path = NULL;
 
-	if (argc == 1){
-		printf("PapiPlot usage:\n"
-				"%s {path}\n"
-				"being {path} the path to your papify-output generated folder\n"
-				"\nIf not installed, you need to install gnuplot. In Ubuntu run:\n"
-				"sudo apt-get install gnuplot\n",
-				argv[0]);
-		exit(0);
+	while ((c = getopt (argc, argv, "l:t:nhp:x:y:")) != -1) {
+			switch (c)
+			{
+				case 'h':
+					printhelp(argv);
+					exit(0);
+				case 'x':
+					res_x = atoi(optarg);
+					break;
+				case 'y':
+					res_y = atoi(optarg);
+					break;
+				case 'l':
+					labels_font_size = atoi(optarg);
+					break;
+				case 't':
+					tics_font_size = atoi(optarg);
+					break;
+				case 'p':
+					path = optarg;
+					break;
+				case 'n':
+					NOLABELS = 1;
+					break;
+				case '?':
+					if (isprint (optopt)) {
+						fprintf (stderr, "Unknown option '-%c'.\n", optopt);
+					}
+					else {
+						fprintf (stderr,
+								"Unknown option character `\\x%x'.\n",
+								optopt);
+					}
+					return 1;
+				default:
+					printhelp(argv);
+					abort();
+			}
+		}
+
+	if(path==NULL){
+		char cwd[3000];
+		getcwd(cwd, sizeof(cwd));
+		len = strlen(cwd)+2;
+		path = malloc(len);
+		strcpy(path, cwd);
+		path[len-2]='/';
+		path[len-1]='\0';
 	}
-	int len = strlen(argv[1])+2;
-	char* path = malloc(len);
-	strcpy(path, argv[1]);
-	path[len-2]='/';
-	path[len-1]='\0';
 
 	search_and_plot(path);
-
-	free(path);
 
 	return 0;
 }
 
-void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_elements){
+void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_elements, unsigned int res_x, unsigned int res_y){
 
 
 	gnuplot_cmd(h,"list = ''");
@@ -68,7 +131,7 @@ void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_ele
 	gnuplot_cmd(h, "set xtics rotate by -25");
 	gnuplot_cmd(h, "set logscale y");
 
-	gnuplot_cmd(h, "set term png size 1680,1050");
+	gnuplot_cmd(h, "set term png size %d,%d", res_x, res_y);
 
 	gnuplot_cmd(h, "set ylabel \"Number of occurrences\"");
 
@@ -87,7 +150,7 @@ void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_ele
 	gnuplot_cmd(h, "set xtics out");
 	gnuplot_cmd(h, "set xtics nomirror");
 	gnuplot_cmd(h, "set xtics autofreq");
-	gnuplot_cmd(h, "set xtics font \"Verdana,8\"");
+	gnuplot_cmd(h, "set xtics font \"Verdana,%d\"", tics_font_size);
 	gnuplot_cmd(h, "set tic scale 0");
 	gnuplot_cmd(h, "set grid");
 	gnuplot_cmd(h, "set label at character 1,1 \"Generated with Papify\"");
@@ -100,9 +163,9 @@ void plot_overall(char* output_path, char *path, int number_of_actors, int numbe
 	gnuplot_ctrl * h ;
 	h = gnuplot_init() ;
 
-	int label_rot = 20;
-	configure_handle(h, number_of_events, number_of_actors);
-	gnuplot_cmd(h, "set output \"/%s/papiplot_overall_.png\"", output_path);
+	//int label_rot = 20;
+	configure_handle(h, number_of_events, number_of_actors, res_x, res_y);
+	gnuplot_cmd(h, "set output \"%s/papiplot_overall_.png\"", output_path);
 	gnuplot_cmd(h, "set title \"Events per actor\"");
 	gnuplot_cmd(h, "set xlabel \"Actors\"");
 
@@ -132,24 +195,29 @@ void plot_overall(char* output_path, char *path, int number_of_actors, int numbe
 	}
 	//draw numbers:
 	//gnuplot_cmd(h, "plot \\");
-	if(number_of_events==1){
-		i = 0;
-		gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle", path, i, i+2, i+2);
-	}
-	else if (number_of_events==0){
-		printf("nothing to plot\n");
-		exit(0);
-	}
-	else{
-		for(i=0;i<number_of_events;i++){
-			if(i == 0){//first
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle,\\", path, i, i+2, i+2);
+	if (NOLABELS)
+		gnuplot_cmd(h, "0 notitle"); //end plot here
+	else
+	{
+		if(number_of_events==1){
+			i = 0;
+			gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle", path, i, i+2, i+2);
+		}
+		else if (number_of_events==0){
+			printf("nothing to plot\n");
+			exit(0);
+		}
+		else{
+			for(i=0;i<number_of_events;i++){
+				if(i == 0){//first
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
+					}
+				else if (i==(number_of_events-1)){//last
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle", path, i, i+2, i+2, labels_font_size);
 				}
-			else if (i==(number_of_events-1)){//last
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle", path, i, i+2, i+2);
-			}
-			else{
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle,\\", path, i, i+2, i+2);
+				else{
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
+				}
 			}
 		}
 	}
@@ -161,8 +229,8 @@ void plot(char* output_path, char *path, char* actor_name, int number_of_actions
 	gnuplot_ctrl * h ;
 	h = gnuplot_init() ;
 
-	int label_rot = 20;
-	configure_handle(h, number_of_events, number_of_actions);
+	//int label_rot = 20;
+	configure_handle(h, number_of_events, number_of_actions, res_x, res_y);
 	gnuplot_cmd(h, "set output \"/%s/papiplot_%s.png\"", output_path, actor_name);
 	gnuplot_cmd(h, "set title \"Events in actor \\\"%s\\\" per action\"", actor_name);
 	gnuplot_cmd(h, "set xlabel \"Actions\"");
@@ -195,24 +263,29 @@ void plot(char* output_path, char *path, char* actor_name, int number_of_actions
 	}
 	//draw numbers:
 	//gnuplot_cmd(h, "plot \\");
-	if(number_of_events==1){
-		i = 0;
-		gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle", path, i, i+2, i+2);
-	}
-	else if (number_of_events==0){
-		printf("nothing to plot\n");
-		exit(0);
-	}
-	else{
-		for(i=0;i<number_of_events;i++){
-			if(i == 0){//first
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle,\\", path, i, i+2, i+2);
+	if (NOLABELS)
+		gnuplot_cmd(h, "0 notitle"); //end plot here
+	else
+	{
+		if(number_of_events==1){
+			i = 0;
+			gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle", path, i, i+2, i+2);
+		}
+		else if (number_of_events==0){
+			printf("nothing to plot\n");
+			exit(0);
+		}
+		else{
+			for(i=0;i<number_of_events;i++){
+				if(i == 0){//first
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
+					}
+				else if (i==(number_of_events-1)){//last
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle", path, i, i+2, i+2, labels_font_size);
 				}
-			else if (i==(number_of_events-1)){//last
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle", path, i, i+2, i+2);
-			}
-			else{
-				gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \",5\" notitle,\\", path, i, i+2, i+2);
+				else{
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
+				}
 			}
 		}
 	}
@@ -290,19 +363,18 @@ void html_actor(FILE* htmlfile, event_acum_for_actor* data){
 
 void search_and_plot(char *path) {
 
-	char * path_to_totals = malloc(strlen(path)+strlen("/plotdata_papi_totals.csv")+2);
+	char * path_to_totals = malloc(strlen(path)+strlen("plotdata_papi_totals.csv")+2);
 	strcpy(path_to_totals, path);
-	strcat(path_to_totals,"/plotdata_papi_totals.csv");
+	strcat(path_to_totals,"plotdata_papi_totals.csv");
+
 	FILE* datafile = fopen(path_to_totals,"w");//reset
 	fclose(datafile);
 
-	char * html = malloc(strlen(path)+strlen("/papiplot.html")+2);
+	char * html = malloc(strlen(path)+strlen("papiplot.html")+2);
 	strcpy(html, path);
-	strcat(html,"/papiplot.html");
+	strcat(html,"papiplot.html");
 	FILE* htmlfile = fopen(html,"w");
 	html_init(htmlfile);
-
-
 	int actors_nb = get_nb_of_actors_in_dir(path);
 	event_acum_for_actor* data;
 
