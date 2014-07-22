@@ -18,5 +18,8 @@ papiplot
 
 	PapiPlot requires GNUPLOT. If not installed, assuming you are on Ubuntu, run:
 	sudo apt-get install gnuplot
-
+	
+========
+Example:
+./papiplot -n
 ![Alt text](papiplot/readme/papiplot_overall_.png?raw=true "Optional Title")
