@@ -161,7 +161,7 @@ void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_ele
 	gnuplot_cmd(h, "set xtics out");
 	gnuplot_cmd(h, "set xtics nomirror");
 	gnuplot_cmd(h, "set xtics autofreq");
-	gnuplot_cmd(h, "set xtics font \"Verdana,%d\"", tics_font_size);
+	gnuplot_cmd(h, "set xtics font \"monospace,%d\"", tics_font_size);
 	gnuplot_cmd(h, "set tic scale 0");
 	gnuplot_cmd(h, "set grid");
 
@@ -222,13 +222,13 @@ void plot_overall(char* output_path, char *path, int number_of_actors, int numbe
 		else{
 			for(i=0;i<number_of_events;i++){
 				if(i == 0){//first
-					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"monospace,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
 					}
 				else if (i==(number_of_events-1)){//last
-					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle", path, i, i+2, i+2, labels_font_size);
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"monospace,%d\" notitle", path, i, i+2, i+2, labels_font_size);
 				}
 				else{
-					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"monospace,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
 				}
 			}
 		}
@@ -290,13 +290,13 @@ void plot(char* output_path, char *path, char* actor_name, int number_of_actions
 		else{
 			for(i=0;i<number_of_events;i++){
 				if(i == 0){//first
-					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"monospace,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
 					}
 				else if (i==(number_of_events-1)){//last
-					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle", path, i, i+2, i+2, labels_font_size);
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"monospace,%d\" notitle", path, i, i+2, i+2, labels_font_size);
 				}
 				else{
-					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"Verdana,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
+					gnuplot_cmd(h, "\"%s\" using ((d='|'.strcol(1).'|', add_label(d),index(d))+(d_width*%d)):%d:(gprintf(\"%%.2se%%S\", $%d)) w labels rotate by 20 font \"monospace,%d\" notitle,\\", path, i, i+2, i+2, labels_font_size);
 				}
 			}
 		}
@@ -331,7 +331,7 @@ const int is_papioutput(const char *filename) {
 }
 
 void html_init(FILE* htmlfile){
-	fprintf(htmlfile, "<html><head><meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\"><title></title></head>"
+	fprintf(htmlfile, "<html><head><meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\"><title>PAPI stats</title></head>"
 			"<body><h1>Papify stats processed with PapiPlot</h1><hr style=\"width: 100%; height: 2px;\">");
 }
 void html_close(FILE* htmlfile, char* path){
