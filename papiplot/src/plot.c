@@ -27,7 +27,7 @@ typedef struct event_acum_for_actor {
 
 event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* filename, char* path_to_totals);
 int get_nb_of_actors_in_dir(char* path);
-int get_number(char *line);
+unsigned long long get_number(char *line);
 void search_and_plot(char *path);
 void struct_test(struct event_acum_for_actor *data);
 int get_events_nb(char *path);
@@ -567,10 +567,12 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 			token = strtok(NULL,";");
 			actor->actions[current]->acumulator[i]->count +=  get_number(token);
 			totals[i] += get_number(token);
+			//printf("adding %s (%llu).. totals[%d] = %llu\n", token, get_number(token), i, totals[i]);
 		}
 
 		found = -1;
 	}
+
 
 	fclose(ofile);
 
@@ -617,7 +619,7 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	return actor;
 }
 
-int get_number(char *line){ //removes quotes from string number
+unsigned long long get_number(char *line){ //removes quotes from string number
 	int lineLength = strlen(line);
 	int j = 0;
 	int i;
