@@ -7,6 +7,9 @@
 
 #include "gnuplot_i.h"
 #include <dirent.h>
+#include <getopt.h>
+#include <ctype.h>
+
 typedef struct event_acumulator {
 	char* event_name;
 	unsigned long long count;
@@ -113,7 +116,10 @@ int main(int argc, char **argv) {
 
 	if(path==NULL){
 		char cwd[3000];
-		getcwd(cwd, sizeof(cwd));
+		if(getcwd(cwd, sizeof(cwd))==NULL){
+			perror("Error retrieving working path:");
+			exit(0);
+		}
 		len = strlen(cwd)+2;
 		path = malloc(len);
 		strcpy(path, cwd);
@@ -123,6 +129,7 @@ int main(int argc, char **argv) {
 
 	search_and_plot(path);
 
+	printf("All done!\n");
 	return 0;
 }
 
@@ -311,7 +318,9 @@ int get_events_nb(char *path) {
 	int nb = 0;
 	FILE* file = fopen(path,"r");
 
-	fgets(buf,1500,file);
+	if(fgets(buf,1500,file)==NULL){
+		return 0;
+	}
 
 	token = strtok(buf,";");
 
@@ -331,8 +340,8 @@ const int is_papioutput(const char *filename) {
 }
 
 void html_init(FILE* htmlfile){
-	fprintf(htmlfile, "<html><head><meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\"><title>PAPI stats</title></head>"
-			"<body><h1>Papify stats processed with PapiPlot</h1><hr style=\"width: 100%; height: 2px;\">");
+	fprintf(htmlfile, "<html><head><meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\"><title>PAPI stats</title></head>\n"
+			"<body><h1>Papify stats processed with PapiPlot</h1><hr style=\"width: 100%%; height: 2px;\">\n");
 }
 void html_close(FILE* htmlfile, char* path){
     fprintf(htmlfile, "<h2>Overall: Events per actor</h2><img alt=\"\""
@@ -349,7 +358,11 @@ void html_close(FILE* htmlfile, char* path){
 
 	fprintf(htmlfile,"<table border=\"1\">"
 	"<td>Actor<br></td>");
-	fgets(buf, 1500, ofile);
+
+	if(fgets(buf, 1500, ofile)==NULL){
+		perror("");
+	}
+
 	token = strtok(buf,";");
 	for(i=0;i<events_nb;i++){
 		token = strtok(NULL,";");
@@ -360,7 +373,8 @@ void html_close(FILE* htmlfile, char* path){
 	int actors_nb = get_actions_nb_in_file(path);
 	for(i=0;i<actors_nb;i++){
 		fprintf(htmlfile,"<tr>\n");
-		fgets(buf, 1500, ofile);
+		if(fgets(buf, 1500, ofile)==NULL)
+			perror("");
 		token = strtok(buf,";");
 		for(j=0;j<events_nb+1;j++){
 				fprintf(htmlfile,"<td>%s<br></td>\n", token);
@@ -370,7 +384,7 @@ void html_close(FILE* htmlfile, char* path){
 	}
 
 	fprintf(htmlfile,"</table>\n");
-	fprintf(htmlfile,"<hr style=\"width: 100%; height: 2px;\">\n");
+	fprintf(htmlfile,"<hr style=\"width: 100%%; height: 2px;\">\n");
 	fprintf(htmlfile,"<br>\n");
 
 
@@ -379,7 +393,7 @@ void html_close(FILE* htmlfile, char* path){
 }
 
 void html_actor(FILE* htmlfile, event_acum_for_actor* data){
-	fprintf(htmlfile,"<table style=\"text-align: left; width: 100%;\" border=\"1\" cellpadding=\"2\""
+	fprintf(htmlfile,"<table style=\"text-align: left; width: 100%%;\" border=\"1\" cellpadding=\"2\""
 			"cellspacing=\"2\">\n");
 
 	fprintf(htmlfile,"<table border=\"1\">"
@@ -408,20 +422,20 @@ void html_actor(FILE* htmlfile, event_acum_for_actor* data){
 		fprintf(htmlfile,"</tr>\n");
 	}
 	fprintf(htmlfile,"</table>\n");
-	fprintf(htmlfile,"<hr style=\"width: 100%; height: 2px;\">\n");
+	fprintf(htmlfile,"<hr style=\"width: 100%%; height: 2px;\">\n");
 	fprintf(htmlfile,"<br>\n");
 }
 
 void search_and_plot(char *path) {
 
-	char * path_to_totals = malloc(strlen(path)+strlen("plotdata_papi_totals.csv")+2);
+	char * path_to_totals = malloc(sizeof(char)*(strlen(path)+strlen("plotdata_papi_totals.csv")+2));
 	strcpy(path_to_totals, path);
 	strcat(path_to_totals,"plotdata_papi_totals.csv");
 
 	FILE* datafile = fopen(path_to_totals,"w");//reset
 	fclose(datafile);
 
-	char * html = malloc(strlen(path)+strlen("papiplot.html")+2);
+	char * html = malloc(sizeof(char)*(strlen(path)+strlen("papiplot.html")+2));
 	strcpy(html, path);
 	strcat(html,"papiplot.html");
 	FILE* htmlfile = fopen(html,"w");
@@ -434,15 +448,15 @@ void search_and_plot(char *path) {
 
     pDir = opendir (path);
     if (pDir == NULL) {
-        perror ("Cannot open directory\n");
+        perror ("Cannot open directory");
         exit(1);
     }
     char * path_to_csv;
 
     while ((pDirent = readdir(pDir)) != NULL) {
     	if(is_papioutput(pDirent->d_name)) {
-    		//printf("going for %s\n", pDirent->d_name);
-    		path_to_csv = malloc(strlen(path)+strlen(pDirent->d_name)+2);
+    		printf("Plotting %s\n", pDirent->d_name);
+    		path_to_csv = malloc(sizeof(char)*(strlen(path)+strlen(pDirent->d_name)+2));
     		strcpy(path_to_csv, path);
     		strcat(path_to_csv,"/");
     		strcat(path_to_csv,pDirent->d_name);
@@ -453,12 +467,14 @@ void search_and_plot(char *path) {
         	free(data);
         }
     }
-    //printf("going for overalls\n");
+    printf("Plotting overalls\n");
     plot_overall(path, path_to_totals, actors_nb, get_events_nb(path_to_totals)+1);
 
     html_close(htmlfile, path_to_totals);
     remove(path_to_totals);
 
+    free(path_to_totals);
+    free(html);
     fclose(htmlfile);
     closedir (pDir);
     return;
@@ -468,47 +484,52 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	char buf[1500];
 	char *token;
 	event_acum_for_actor* actor;
-	char* path_todatafile = malloc(strlen(path_todir)+strlen("/papidata.temp")+4);
-	char* actor_name = &(*filename)+12;
-	//printf("actor name is %s\n", actor_name);
+	char* path_todatafile = malloc(sizeof(char)*(strlen(path_todir)+strlen("/plotdata_")+strlen(filename)+1));
+	char* actor_name = malloc(sizeof(char)*(strlen(filename)+1));
+	strcpy(actor_name,filename);
+	//memmove(actor_name, actor_name+12, strlen(actor_name));//or
+	actor_name+=12;
+
 	strcpy(path_todatafile, path_todir);
-	strcat(path_todatafile,"/");
-	strcat(path_todatafile,"plotdata_");
+	strcat(path_todatafile,"/plotdata_");
+	char temp2[strlen(actor_name)];
+	strcpy(temp2, actor_name);
 	strcat(path_todatafile,actor_name);
 	//printf("creating %s\n", path_todatafile);
 
-
+	strcpy(actor_name, temp2);
 	int events_nb = get_events_nb(path_tofile);
 	//printf("we have %d actions here\n",get_actions_nb_in_file(path_tofile));/////////////////////////////////////////////
 	//get_actions_nb_in_file(path_tofile);
 	int actions_nb=get_actions_nb_in_file(path_tofile);
 
-	actor = malloc(sizeof(event_acum_for_actor)*2+sizeof(event_acum_for_action*)*(actions_nb)*3);//weird memory is weird..
-	actor->actor_name = malloc(strlen(actor_name));
+	actor = malloc(sizeof(event_acum_for_actor)+sizeof(event_acum_for_action*)*(actions_nb));//weird memory is weird..
+	actor->actor_name = malloc(strlen(actor_name)+1);
 	strcpy(actor->actor_name,actor_name);
+
 	actor->proc_file_path = path_todatafile;
 	actor->actions_nb = actions_nb;
 	int i, j;
 
 
-	for(i=0;i<actions_nb*3;i++){
-		actor->actions[i] = malloc(sizeof(event_acum_for_action)*2+sizeof(event_acumulator)*events_nb*3);//weird memory is weird..
+	for(i=0;i<actions_nb;i++){
+		actor->actions[i] = malloc(sizeof(event_acum_for_action)+sizeof(event_acumulator)*events_nb);//weird memory is weird..
 		actor->actions[i]->events_nb = events_nb;
-		//actor->actions[i]->action_name
 		for(j=0;j<events_nb;j++){
 			actor->actions[i]->acumulator[j] = malloc(sizeof(event_acumulator));
-			//actor->actions[i]->acumulator->event_name
 		}
 	}
 
 
-	for(j = 0; j <actor->actions_nb; j++)
+	for(j = 0; j <actor->actions_nb; j++){
+		actor->actions[j]->action_name=NULL;
 		for(i = 0; i <actor->actions[j]->events_nb; i++){
 			actor->actions[j]->acumulator[i]->count = 0;
 		}
+	}
 
 	FILE* ofile = fopen(path_tofile, "r");
-	fgets(buf,1500,ofile);//read first line
+	if(fgets(buf,1500,ofile)==NULL) perror("");//read first line
 	token = strtok(buf,";");
 	token = strtok(NULL,";");//skip action column (actot name)
 
@@ -518,10 +539,9 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 			if(token[strlen(token)-1]=='\n') token[strlen(token)-1] = '\0';
 			actor->actions[j]->acumulator[i]->event_name = malloc(strlen(token)+1);
 			strcpy(actor->actions[j]->acumulator[i]->event_name, token);
-			//acum->acumulator->event_name[i] = malloc(strlen(token)+1);
-			//strcpy(acum->acumulator->event_name[i], token);
 		}
 	}
+
 
 
 	int found = -1;
@@ -529,7 +549,7 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	int current;
 
 
-	long unsigned int totals[events_nb];
+	long long unsigned int totals[events_nb];
 	for (i=0;i<events_nb;i++){
 		totals[i]=0;
 	}
@@ -574,6 +594,7 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	}
 
 
+
 	fclose(ofile);
 
 	//writing events per action
@@ -595,7 +616,7 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	//adding to totals per actor
 	int label_set = 0;
 	datafile = fopen(path_to_totals,"r");
-	fgets(buf,1500,datafile);
+	if(fgets(buf,1500,datafile)==NULL);// perror("");
 	if(strstr(buf,"Actor;")!=NULL) label_set = 1;
 	fclose(datafile);
 
@@ -610,7 +631,7 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 
 	fprintf(datafile,"%s;",strtok(actor->actor_name,"."));
 	for(j=0; j < events_nb; j++){
-		fprintf(datafile,"%lu;", totals[j]);
+		fprintf(datafile,"%llu;", totals[j]);
 	}
 	fprintf(datafile,"\n");
 	fclose(datafile);
@@ -694,7 +715,7 @@ int get_actions_nb_in_file(char* path_tofile){//weird memory allocation... Â¿??Â
 
 	FILE* ofile = fopen(path_tofile, "r");
 
-	fgets(buf,1500,ofile);//skip labels lines
+	if(fgets(buf,1500,ofile)==NULL) perror("");//skip labels lines
 	while(fgets(buf,1500,ofile)!=NULL){
 		token = strtok(buf,";");
 		token = strtok(NULL,";");//read action name
