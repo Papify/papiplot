@@ -36,5 +36,7 @@ TODO:
 More stats:
 - Number of execs per action
 - Number of execs per actor
+- Average of event per action
+- Average of event per actor
 
 
