@@ -1,24 +1,31 @@
-papiplot
+PapiPlot
 ========
 
-	PapiPlot options:
-	-p [path]	 Set path to the papi-output folder generated with Papify. If not specified, current directory will be used.
+PapiPlot takes the output generated with ![Papify](https://github.com/alejoar/papify) and generates cute graphs you can use to evaluate the performance of your ORC-Apps. These graphs come served with a generated html where value tables are included for each graph, so you can check the concrete value for every point. An example of an html generated with PapiPlot has been set up ![here](http://alejoar.github.io/papiplot/).
 
-	-x [res_x]	 Change horizontal resolution. If not specified, default is 1680.
+``` 
+./papiplot -h
 
-	-y [res_y]	 Change vertical resolution. If not specified, default is 1050.
+PapiPlot options:
+-p [path]	 Set path to the papi-output folder generated with Papify. If not specified, current directory will be used.
 
-	-t [font size]	 Change tics font size. If not specified, default is 8.
+-x [res_x]	 Change horizontal resolution. If not specified, default is 1680.
 
-	-l [font size]	 Change labels font size. If not specified, default is 8.
+-y [res_y]	 Change vertical resolution. If not specified, default is 1050.
 
-	-n 	 	No labels will be printed
+-t [font size]	 Change tics font size. If not specified, default is 8.
 
-	-h 	 	Print help
+-l [font size]	 Change labels font size. If not specified, default is 8.
 
-	PapiPlot requires GNUPLOT. If not installed, assuming you are on Ubuntu, run:
-	sudo apt-get install gnuplot
-	
+-n 	 	No labels will be printed
+
+-h 	 	Print help
+
+PapiPlot requires GNUPLOT. If not installed, assuming you are on Ubuntu, run:
+sudo apt-get install gnuplot
+
+```
+
 ========
 Example:
 
