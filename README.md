@@ -24,3 +24,10 @@ Example:
 
 ./papiplot -n
 ![Alt text](papiplot/readme/papiplot_overall_.png?raw=true "Optional Title")
+
+
+###Fancy some madness?
+
+![MADNESS!](papiplot/readme/madness.png?raw=true "MADNESS!")
+![MADNESS!](papiplot/readme/madness_not_labeled.png?raw=true "MADNESS!")
+
