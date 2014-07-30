@@ -31,3 +31,10 @@ Example:
 ![MADNESS!](papiplot/readme/madness.png?raw=true "MADNESS!")
 ![MADNESS!](papiplot/readme/madness_not_labeled.png?raw=true "MADNESS!")
 
+
+TODO:
+More stats:
+- Number of execs per action
+- Number of execs per actor
+
+
