@@ -44,5 +44,6 @@ More stats:
 - Number of execs per actor
 - Average of event per action
 - Average of event per actor
+- Execs per second (First, papify needs to be updated to provide timestamps per action exec)
 
 
