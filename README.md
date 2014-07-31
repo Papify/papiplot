@@ -54,12 +54,14 @@ It is also convenient to remove labels in order to get a cleaner graph:
 ![MADNESS!](papiplot/readme/madness_not_labeled.png?raw=true "MADNESS!")
 
 
-TODO:
-More stats:
+##TODO
+#####More stats:
 - Number of execs per action
 - Number of execs per actor
 - Average of event per action
 - Average of event per actor
 - Execs per second (First, papify needs to be updated to provide timestamps per action exec)
+
+
 
 
