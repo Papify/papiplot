@@ -36,7 +36,8 @@ Here's what the graphs look like without labels (`$ ./papiplot -n`)
 Sometimes it's possible for an actor to have a huge amount of actions *papified* and everything may look cramped like in the following example:
 ![cramped!](http://alejoar.github.io/papiplot/papiplot_HevcDecoder_Algo_Parser.png)
 
-Now that's awful!
+Now that's **awful**!
+
 You might want to consider reducing the amount of actions *papified* in this actor and repeat the process several times to get the same stats grouped into different charts. But if you insist in having everything in a single graph, you may want to consider the following:
 
 #####Increase horizontal resolution
