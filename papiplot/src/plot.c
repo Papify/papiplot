@@ -59,7 +59,6 @@ void printhelp(char** argv){
 			"\tsudo apt-get install gnuplot\n\n");
 }
 
-
 int main(int argc, char **argv) {
 	int c, len;
 	res_x = 1680;
@@ -139,9 +138,6 @@ void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_ele
 
 	gnuplot_cmd(h, "dx=.7");
 	gnuplot_cmd(h, "n=%d", number_of_events);
-	gnuplot_cmd(h, "total_box_width_relative=0.3");
-	gnuplot_cmd(h, "gap_width_relative=0.1");
-	gnuplot_cmd(h, "d_width=(gap_width_relative+total_box_width_relative)*dx/2.");
 
 	gnuplot_cmd(h,"list = ''");
 	gnuplot_cmd(h,"index(w) = words(substr(list, 0, strstrt(list, w)-1))");
@@ -153,7 +149,7 @@ void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_ele
 
 	gnuplot_cmd(h, "set term png truecolor");
 	gnuplot_cmd(h, "set grid");
-	gnuplot_cmd(h, "set boxwidth total_box_width_relative/n relative");
+	//
 	gnuplot_cmd(h, "set style fill transparent solid 0.5 noborder");
 
 
@@ -161,16 +157,29 @@ void configure_handle(gnuplot_ctrl *  h, int number_of_events, int number_of_ele
 
 	gnuplot_cmd(h, "set ylabel \"Number of occurrences\"");
 
+	if(number_of_elements==1){
+		float x_top = 0.7+number_of_events/10.0;
+		float x_low = -0.7;
+		//printf("x_top = %.2f\nx_low = %.2f\n", x_top, x_low);
+		gnuplot_cmd(h, "set xrange [%.2f:%.2f]", x_low, x_top);
+		gnuplot_cmd(h, "total_box_width_relative=0.3");
+		gnuplot_cmd(h, "gap_width_relative=0.1");
+		gnuplot_cmd(h, "d_width=(gap_width_relative+total_box_width_relative)*dx/2.");
+		gnuplot_cmd(h, "set boxwidth total_box_width_relative/n");
+	}
+	else {
+		gnuplot_cmd(h, "total_box_width_relative=0.3");
+		gnuplot_cmd(h, "gap_width_relative=0.1");
+		gnuplot_cmd(h, "d_width=(gap_width_relative+total_box_width_relative)*dx/2.");
+		gnuplot_cmd(h, "set boxwidth total_box_width_relative/n relative");
+	}
 
-	/*
-	gnuplot_cmd(h, "set xrange [-1:%d]", number_of_elements);
-*/
-	gnuplot_cmd(h, "set xtics out");
-	gnuplot_cmd(h, "set xtics nomirror");
-	gnuplot_cmd(h, "set xtics autofreq");
+	//gnuplot_cmd(h, "set xtics out");
+	//gnuplot_cmd(h, "set xtics nomirror");
+	//gnuplot_cmd(h, "set xtics autofreq");
 	gnuplot_cmd(h, "set xtics font \"monospace,%d\"", tics_font_size);
 	gnuplot_cmd(h, "set tic scale 0");
-	gnuplot_cmd(h, "set grid");
+	gnuplot_cmd(h, "set grid noxtics");
 
 	gnuplot_cmd(h, "set label at character 1,1 \"Generated with Papify\"");
 	gnuplot_cmd(h, "set format y \"%%.0se%%S\"");
@@ -616,7 +625,7 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	//adding to totals per actor
 	int label_set = 0;
 	datafile = fopen(path_to_totals,"r");
-	if(fgets(buf,1500,datafile)==NULL);// perror("");
+	if(fgets(buf,1500,datafile)==NULL);//nothing wrong here!
 	if(strstr(buf,"Actor;")!=NULL) label_set = 1;
 	fclose(datafile);
 
