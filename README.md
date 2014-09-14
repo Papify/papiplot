@@ -1,7 +1,7 @@
 PapiPlot
 ========
 
-PapiPlot takes the output generated with [Papify](https://github.com/alejoar/papify) and generates cute graphs you can be used to evaluate the performance of your ORC-Apps. These graphs come served with a generated html where value tables are included for each graph, so you can check the specific value for each point or copy them into an excel/word document.
+PapiPlot takes the output generated with [Papify](https://github.com/alejoar/papify) and generates graphs that can be used to evaluate the performance of your ORC-Apps. These graphs come served with a generated html where value tables are included for each graph, so you can check the specific value for each point or copy them into an excel/word document.
 
 PapiPlot generates the graphs using **gnuplot**, so make sure you have it installed:
 ```
