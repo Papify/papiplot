@@ -27,7 +27,7 @@ If you place the PapiPlot binary inside the **papi-output** dir, you can run it 
 
 ##Examples
 
-An example of an html generated with PapiPlot has been set up  at http://alejoar.github.io/papiplot. Note that this is just an example generated with the command `./papiplot` (no parameters) using the data obtained after applying papify to all actions, all actors to the ![orc-app RVC](https://github.com/orcc/orc-apps), an app that has some actors with lots of actions, meaning some images are not properly adjusted to make them usable. This can be fixed using the resolution parameters integrated in PapiPlot, an example is shown below.
+An example of an html generated with PapiPlot has been set up  at http://alejoar.github.io/papiplot. Note that this is just an example generated with the command `./papiplot` (no parameters) using the data obtained after applying papify to all actions, all actors to the [orc-app RVC](https://github.com/orcc/orc-apps), an app that has some actors with lots of actions, meaning some images are not properly adjusted to make them usable. This can be fixed using the resolution parameters integrated in PapiPlot, an example is shown below.
 
 Here's what the graphs look like without labels (`$ ./papiplot -n`)
 ![Alt text](papiplot/readme/papiplot_overall_.png?raw=true "Optional Title")
