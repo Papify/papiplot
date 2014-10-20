@@ -470,7 +470,10 @@ void search_and_plot(char *path) {
     		strcat(path_to_csv,"/");
     		strcat(path_to_csv,pDirent->d_name);
         	data = process_data(path, path_to_csv, pDirent->d_name, path_to_totals);
-        	plot(path, data->proc_file_path, data->actor_name, data->actions_nb, data->actions[0]->events_nb);
+        	if(data->actions_nb == 0)
+        		printf("	no data..\n");
+        	else
+        		plot(path, data->proc_file_path, data->actor_name, data->actions_nb, data->actions[0]->events_nb);
         	html_actor(htmlfile, data);
         	remove(data->proc_file_path);
         	free(data);
@@ -511,8 +514,10 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	//printf("we have %d actions here\n",get_actions_nb_in_file(path_tofile));/////////////////////////////////////////////
 	//get_actions_nb_in_file(path_tofile);
 	int actions_nb=get_actions_nb_in_file(path_tofile);
-
-	actor = malloc(sizeof(event_acum_for_actor)+sizeof(event_acum_for_action*)*(actions_nb));//weird memory is weird..
+	if(actions_nb == 0)
+		actor = malloc(sizeof(event_acum_for_actor)+sizeof(event_acum_for_action*));//weird memory is weird..
+	else
+		actor = malloc(sizeof(event_acum_for_actor)+sizeof(event_acum_for_action*)*(actions_nb));
 	actor->actor_name = malloc(strlen(actor_name)+1);
 	strcpy(actor->actor_name,actor_name);
 
@@ -541,7 +546,6 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 	if(fgets(buf,1500,ofile)==NULL) perror("");//read first line
 	token = strtok(buf,";");
 	token = strtok(NULL,";");//skip action column (actot name)
-
 	for(i=0;i<actor->actions[0]->events_nb;i++){
 		token = strtok(NULL,";");
 		for(j = 0; j <actor->actions_nb; j++){
@@ -550,8 +554,6 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 			strcpy(actor->actions[j]->acumulator[i]->event_name, token);
 		}
 	}
-
-
 
 	int found = -1;
 	int found_actions = 0;
@@ -563,46 +565,44 @@ event_acum_for_actor* process_data (char* path_todir, char* path_tofile, char* f
 		totals[i]=0;
 	}
 
-
 	//acumuating structures
 	int result; //borrar
-	while(fgets(buf,1500,ofile)!=NULL){
-		token = strtok(buf,";");
-		token = strtok(NULL,";");//read action name
-
-		for(i=0; i<actor->actions_nb; i++){
-			if(actor->actions[i]->action_name==NULL)
-				break;
-			else {
-				result = strcmp(actor->actions[i]->action_name,token);
-				if(result==0){
-					found = i;
+	if(actor->actions_nb != 0) {
+		while(fgets(buf,1500,ofile)!=NULL){
+			token = strtok(buf,";");
+			token = strtok(NULL,";");//read action name
+			for(i=0; i<actor->actions_nb; i++){
+				if(actor->actions[i]->action_name==NULL)
 					break;
-				}
 				else {
+					result = strcmp(actor->actions[i]->action_name,token);
+					if(result==0){
+						found = i;
+						break;
+					}
+					else {
+					}
 				}
 			}
+
+			if (found == -1){
+				//printf("not found, adding action %s\n", token);
+				actor->actions[found_actions]->action_name = malloc(strlen(token)+1);
+				strcpy(actor->actions[found_actions]->action_name,token);
+			}
+
+			current = (found == -1)? found_actions++ : found;
+
+
+			for(i = 0; i <actor->actions[current]->events_nb; i++){
+				token = strtok(NULL,";");
+				actor->actions[current]->acumulator[i]->count +=  get_number(token);
+				totals[i] += get_number(token);
+				//printf("adding %s (%llu).. totals[%d] = %llu\n", token, get_number(token), i, totals[i]);
+			}
+			found = -1;
 		}
-		if (found == -1){
-			//printf("not found, adding action %s\n", token);
-			actor->actions[found_actions]->action_name = malloc(strlen(token)+1);
-			strcpy(actor->actions[found_actions]->action_name,token);
-		}
-
-		current = (found == -1)? found_actions++ : found;
-
-
-		for(i = 0; i <actor->actions[current]->events_nb; i++){
-			token = strtok(NULL,";");
-			actor->actions[current]->acumulator[i]->count +=  get_number(token);
-			totals[i] += get_number(token);
-			//printf("adding %s (%llu).. totals[%d] = %llu\n", token, get_number(token), i, totals[i]);
-		}
-
-		found = -1;
 	}
-
-
 
 	fclose(ofile);
 
@@ -726,6 +726,7 @@ int get_actions_nb_in_file(char* path_tofile){//weird memory allocation... Â¿??Â
 
 	if(fgets(buf,1500,ofile)==NULL) perror("");//skip labels lines
 	while(fgets(buf,1500,ofile)!=NULL){
+		//printf("buf = %d (%d)\n", buf,strlen(buf));
 		token = strtok(buf,";");
 		token = strtok(NULL,";");//read action name
 
@@ -735,7 +736,7 @@ int get_actions_nb_in_file(char* path_tofile){//weird memory allocation... Â¿??Â
 				break;
 			}
 
-		if (found == -1){
+		if (found == -1 && token != NULL){
 			theActions = realloc(theActions, sizeof(char*)*(actions_nb+2));
 			theActions[actions_nb] = malloc(strlen(token)+1);
 			theActions[actions_nb+1] = malloc(strlen(token)+1);
@@ -744,12 +745,10 @@ int get_actions_nb_in_file(char* path_tofile){//weird memory allocation... Â¿??Â
 		}
 		found = -1;
 	}
-
 	fclose(ofile);
 
 	for(i=0; i<actions_nb; i++)
 		free(theActions[i]);
 	free(theActions);
-
 	return actions_nb;
 }
