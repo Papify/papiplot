@@ -3,11 +3,6 @@ PapiPlot
 
 PapiPlot takes the output generated with [Papify](https://github.com/alejoar/papify) and generates graphs that can be used to evaluate the performance of your ORC-Apps. These graphs come served with a generated html where value tables are included for each graph, so you can check the specific value for each point or copy them into an excel/word document.
 
-PapiPlot generates the graphs using **gnuplot**, so make sure you have it installed:
-```
-sudo apt-get install gnuplot
-```
-
 If you place the PapiPlot binary inside the **papi-output** dir, you can run it without any arguments: it will generate the graphs with default parameters. Other options available are:
 ``` 
 -p [path]	 Set path to the papi-output folder generated with Papify. If not specified, current directory will be used.
@@ -26,6 +21,11 @@ If you place the PapiPlot binary inside the **papi-output** dir, you can run it 
 ```
 
 ##Compile
+PapiPlot generates the graphs using **gnuplot**, so make sure it is installed:
+```
+sudo apt-get install gnuplot
+```
+
 It is possible to quickly compile papiplot using cmake:
 ```
 $ git clone https://github.com/Papify/papiplot.git
