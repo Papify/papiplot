@@ -25,6 +25,17 @@ If you place the PapiPlot binary inside the **papi-output** dir, you can run it 
 -h 	 	Print help
 ```
 
+##Compile
+It is possible to quickly compile papiplot using cmake:
+```
+$ git clone https://github.com/Papify/papiplot.git
+$ cd papiplot/papiplot/
+$ cmake .
+$ make
+```
+
+You can also import the project into eclipse.
+
 ##Examples
 
 An example of an html generated with PapiPlot has been set up  at http://alejoar.github.io/papiplot. Note that this is just an example generated with the command `./papiplot` (no parameters) using the data obtained after applying papify to all actions, all actors to the [orc-app RVC](https://github.com/orcc/orc-apps), an app that has some actors with lots of actions, meaning some images are not properly adjusted to make them usable. This can be fixed using the resolution parameters integrated in PapiPlot, an example is shown below.
