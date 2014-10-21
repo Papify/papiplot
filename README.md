@@ -45,7 +45,7 @@ Here's what the graphs look like without labels (`$ ./papiplot -n`)
 
 
 Sometimes it's possible for an actor to have a huge amount of actions *papified* and everything may look cramped like in the following example:
-![cramped!](http://alejoar.github.io/papiplot/papiplot_HevcDecoder_Algo_Parser.png)
+![cramped!](http://papify.github.io/papiplot/papiplot_HevcDecoder_Algo_Parser.png)
 
 Now that's **awful**!
 
